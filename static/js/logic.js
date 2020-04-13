@@ -20,10 +20,13 @@ d3.json(queryUrl, function(data) {
   
   function circleStyle(feature) {
     return {
-      fillOpacity: 0.75,
-      color: "white",
-      fillColor: "red",
-      radius: getRadius(feature.properties.mag)
+      opacity: 1,
+      fillOpacity: 1,
+      fillColor: getColor(feature.properties.mag),
+      color: "#000000",
+      radius: getRadius(feature.properties.mag),
+      stroke: true,
+      weight: 0.5
     };
   }
 
@@ -36,17 +39,44 @@ d3.json(queryUrl, function(data) {
     return magnitude * 4;
   }
 
+  function getColor(magnitude) {
+    switch (true) {
+    case magnitude > 5:
+      return "#ea2c2c";
+    case magnitude > 4:
+      return "#ea822c";
+    case magnitude > 3:
+      return "#ee9c00";
+    case magnitude > 2:
+      return "#eecc00";
+    case magnitude > 1:
+      return "#d4ee00";
+    default:
+      return "#98ee00";
+    }
+  }
 
   L.geoJson(data, {
     onEachFeature: function(feature,layer) {
-      layer.bindPopup("<h3>" + feature.properties.place + "</h3>");
+      layer.bindPopup("<h3>" + feature.properties.place + "</h3><hr><h3>Magnitude " + feature.properties.mag + "</h3>");
     },
     
     style: circleStyle,
+    
     pointToLayer: function (feature, latlng) {
-      return L.CircleMarker(latlng);
+      return L.circleMarker(latlng);
     }
   }).addTo(map);
-  
 });
 
+  var legend = L.control({ position: "bottomright" })
+  legend.onAdd = function() {
+    var div = L.DomUtil.create("div", "legend");
+    
+    var legendInfo = "<h1>Magnitude of Earthquakes</h1>"
+
+    div.innerHTML = legendInfo;
+    
+    return div;
+  }
+  legend.addTo(map);
