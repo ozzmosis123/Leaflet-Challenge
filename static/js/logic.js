@@ -1,23 +1,45 @@
+// Adding tile layers
+var streetmap = L.tileLayer("https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}", {
+  attribution: "Map data &copy; <a href=\"https://www.openstreetmap.org/\">OpenStreetMap</a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA</a>, Imagery © <a href=\"https://www.mapbox.com/\">Mapbox</a>",
+  maxZoom: 18,
+  id: "mapbox.streets",
+  accessToken: "pk.eyJ1Ijoib3p6bW9zaXMxMjMiLCJhIjoiY2s4cXVraDZrMDZqeDNmczE0NXlxbzFuZiJ9.IN-UkP_vrzYjq0Oiav-Fig"
+});
+
+var darkmap = L.tileLayer("https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}", {
+  attribution: "Map data &copy; <a href=\"https://www.openstreetmap.org/\">OpenStreetMap</a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA</a>, Imagery © <a href=\"https://www.mapbox.com/\">Mapbox</a>",
+  maxZoom: 18,
+  id: "mapbox.dark",
+  accessToken: "pk.eyJ1Ijoib3p6bW9zaXMxMjMiLCJhIjoiY2s4cXVraDZrMDZqeDNmczE0NXlxbzFuZiJ9.IN-UkP_vrzYjq0Oiav-Fig"
+});
+
 var map = L.map("map", {
     center: [37.09, -95.71],
-    zoom: 5
-});
+    zoom: 5,
+    layers: [streetmap, darkmap]
+   });
 
-// Adding tile layervr
-var mylayer = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
-    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-    maxZoom: 18,
-    id: 'mapbox/streets-v11',
-    tileSize: 512,
-    zoomOffset: -1,
-    accessToken: "pk.eyJ1Ijoib3p6bW9zaXMxMjMiLCJhIjoiY2s4cXVraDZrMDZqeDNmczE0NXlxbzFuZiJ9.IN-UkP_vrzYjq0Oiav-Fig"
-});
+// Create a baseMaps object
+var baseMaps = {
+    "Street Map": streetmap,
+    "Dark Map": darkmap
+  };
 
-mylayer.addTo(map)
-var queryUrl = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson"
+// Create on overlays object for layers that go on map
+var tectonicplates = new L.LayerGroup();  
+var overlays = {
+    "Tectonic Plates": tectonicplates
+    // Earthquakes: earthquakes
+  };
+  
+  // Then we add a control to the map that will allow the user to change which
+  // layers are visible.
+  L.control
+    .layers(baseMaps, overlays)
+    .addTo(map);
 
-d3.json(queryUrl, function(data) {
-    console.log(data)
+
+d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson", function(feature) {
 
     function circleStyle(feature) {
         return {
@@ -57,7 +79,7 @@ d3.json(queryUrl, function(data) {
         }
     }
 
-    L.geoJson(data, {
+    L.geoJson(feature, {
         onEachFeature: function(feature, layer) {
             layer.bindPopup("<h3>" + feature.properties.place + "</h3><hr><h3>Magnitude " + feature.properties.mag + "</h3>");
         },
@@ -68,7 +90,9 @@ d3.json(queryUrl, function(data) {
             return L.circleMarker(latlng);
         }
     }).addTo(map);
-    // start here
+    
+    
+    // Legend start here
     var legend = L.control({ position: "bottomright" })
 
 
@@ -89,7 +113,7 @@ d3.json(queryUrl, function(data) {
             "#ea2c2c"
         ];
 
-        // for loop
+        // for loop to match each grade with each color
         for (var i = 0; i < grades.length; i++) {
             div.innerHTML += "<i style='background: " + colors[i] + "'></i> " + grades[i] + (grades[i + 1] ? "&ndash;" + grades[i + 1] + "<br>" : "+");
         }
@@ -97,4 +121,11 @@ d3.json(queryUrl, function(data) {
     }
     legend.addTo(map);
 
+    d3.json("https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json", function(data) {
+        L.geoJson(data, {
+            color: "orange",
+            weight: 2
+        }).addTo(tectonicplates)
+        tectonicplates.addTo(map);
+    })
 });
